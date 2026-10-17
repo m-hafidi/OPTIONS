@@ -113,4 +113,4 @@ Note: Ensure you understand GCP's pricing before deploying to avoid unexpected c
 ### Binomial Model
 ![binomial-tree-demo](media/Binomial_Model.gif)
 
-By following these instructions, you can easily set up and explore the option pricing models using the Streamlit web app. Feel free to experiment with different parameters and see how they affect the calculated option prices.
+By following these instructions, you can easily set up and explore the option pricing models using the Streamlit web app. Feel free to experiment with different parameters and see how they affect the calculated option prices.# OPTIONS
