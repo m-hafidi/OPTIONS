@@ -2,13 +2,13 @@
 
 Compare European option prices three ways — **Black–Scholes**, **Monte Carlo**, and a **binomial tree** — on live Yahoo Finance data, all on one screen.
 
-**[▶ Try it live](https://m-hafidi.github.io/OPTIONS/)** — click to open the interactive preview.
+**[▶ Try it live](https://options-uuuz.vercel.app/)** — click to open the app.
 
 ![App preview](docs/preview.png)
 
 Pick a method in the tabs, set the contract (ticker, strike, risk-free rate, volatility, exercise date — plus simulations and time steps where they apply), and hit **Price the option**. The call/put figures, the ticker's one-year price chart, and — on Monte Carlo — a grid of simulated paths appear *beside* the parameters, no scrolling. The live last close seeds the strike; switching symbols clears it and re-seeds from the new quote. Light and dark themes, scrubbable charts, keyboard access throughout.
 
-> The live preview serves the full interface from GitHub Pages, but browsers can't call Yahoo Finance directly (CORS) and the pricing engines are Python — so on the preview, pricing shows the data-layer message instead of numbers. Run it locally (below) for real prices; nothing is ever faked.
+> The live site runs the full stack — the React app on the CDN, the FastAPI pricing service on Vercel — so quotes, history, and prices there are the real thing, exactly as when run locally. The only difference: after a quiet period the first request waits a couple of seconds for the function to wake up.
 
 ## Quick start
 
