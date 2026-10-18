@@ -32,26 +32,15 @@ def theme_colors():
 
 
 def topbar():
-    left, right = st.columns([4, 1])
+    left, right = st.columns([3, 2])
     with left:
         st.markdown("<h1>Option pricing</h1>", unsafe_allow_html=True)
     with right:
-        st.markdown('<div class="theme-switch">', unsafe_allow_html=True)
-        st.radio("Theme", ["Dark", "Light"], horizontal=True, label_visibility="collapsed",
-                 key="theme_radio",
-                 on_change=lambda: st.session_state.update(
-                     theme="dark" if st.session_state.theme_radio == "Dark" else "light"))
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-def open_card(title=None):
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    if title:
-        st.markdown(f'<div class="card-title">{title}</div>', unsafe_allow_html=True)
-
-
-def close_card():
-    st.markdown("</div>", unsafe_allow_html=True)
+        with st.container():
+            st.radio("Theme", ["Dark", "Light"], horizontal=True, label_visibility="collapsed",
+                     key="theme_radio",
+                     on_change=lambda: st.session_state.update(
+                         theme="dark" if st.session_state.theme_radio == "Dark" else "light"))
 
 
 def param_inputs(model):
@@ -137,14 +126,14 @@ def result_band(call, put, ticker):
     )
 
 
-def draw_charts(model, data, mc, colors):
-    fig = Ticker.plot_data(data, model["ticker"], "Close",
+def draw_charts(data, params, mc, colors):
+    fig = Ticker.plot_data(data, params["ticker"], "Close",
                            text_color=colors["text"], grid_color=colors["border"],
                            line_color=colors["accent"])
     st.pyplot(fig)
     if mc is not None:
         fig2 = mc.plot_simulation_results(
-            min(model.get("paths", 0), 200),
+            min(params.get("paths", 0), 200),
             text_color=colors["text"], grid_color=colors["border"],
             path_color=colors["accent"], strike_color=colors["text2"])
         st.pyplot(fig2)
@@ -170,9 +159,9 @@ def main():
     st.caption(blurb)
 
     st.markdown("")
-    open_card("Contract parameters")
-    params = param_inputs(model)
-    close_card()
+    with st.container(border=True):
+        st.markdown("#### Contract parameters")
+        params = param_inputs(model)
 
     if params is None:
         return
@@ -195,7 +184,7 @@ def main():
     st.markdown("")
     result_band(call, put, params["ticker"])
     st.markdown("")
-    draw_charts(model, params, mc if model == Model.MONTE_CARLO else None, theme_colors())
+    draw_charts(data, params, mc if model == Model.MONTE_CARLO else None, theme_colors())
 
 
 if __name__ == "__main__":

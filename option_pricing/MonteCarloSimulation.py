@@ -81,9 +81,12 @@ class MonteCarloPricing(OptionPricingModel):
 
     def plot_simulation_results(self, num_of_movements, text_color="#F5F5F7",
                                 grid_color="#2A2A2E", path_color="#FF385C",
-                                strike_color="#A1A1A6"):
+                                strike_color="#A1A1A6", reveal=True):
         """Plots simulated price paths. Returns a matplotlib Figure.
 
+        Same visual language as the price area-chart: a reveal-wipe intro
+        draws the paths left-to-right, and each path terminates in a glowing
+        dot (the reference ChartGlowFilter / ChartActiveDot equivalent).
         Theme colors are passed in so the chart sits on the app's surface;
         defaults match the dark theme.
         """
@@ -91,23 +94,55 @@ class MonteCarloPricing(OptionPricingModel):
         fig.patch.set_alpha(0.0)
         ax.set_facecolor("none")
 
-        ax.plot(self.simulation_results_S[:, 0:num_of_movements],
-                color=path_color, linewidth=0.8, alpha=0.7)
-        ax.axhline(self.K, color=strike_color, linestyle="--", linewidth=1.2,
-                   label="Strike price")
+        paths = self.simulation_results_S[:, 0:num_of_movements]
+        ax.plot(paths, color=path_color, linewidth=0.8, alpha=0.55)
+
+        # terminal glow: a soft halo under a solid dot at each path's endpoint
+        ends = paths[-1, :]
+        ax.scatter(ends, [self.num_of_steps] * len(ends), s=42,
+                   color=path_color, alpha=0.10, linewidths=0)      # halo
+        ax.scatter(ends, [self.num_of_steps] * len(ends), s=6,
+                   color=path_color, edgecolors=text_color,
+                   linewidths=0.6, zorder=3)                          # dot
+
+        strike = ax.axhline(self.K, color=strike_color, linestyle="--",
+                            linewidth=1.3, label="Strike")
+        strike.set_dash_capstyle("round")
+
         ax.set_xlim([0, self.num_of_steps])
         ax.set_ylabel("Simulated price", color=text_color, fontsize=10)
         ax.set_xlabel("Days in future", color=text_color, fontsize=10)
         ax.set_title(f"{num_of_movements}/{self.N} simulated paths",
-                     color=text_color, fontsize=12, fontweight="bold",
-                     loc="left", pad=14)
+                     color=text_color, fontsize=13, fontweight="bold",
+                     loc="left", pad=16)
         ax.tick_params(colors=text_color, labelsize=9)
         for spine in ("top", "right", "left"):
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_color(grid_color)
-        ax.grid(axis="y", color=grid_color, linewidth=0.8, alpha=0.6)
+        ax.grid(axis="y", color=grid_color, linewidth=0.8, alpha=0.5)
         leg = ax.legend(loc="best", frameon=False, fontsize=9)
         for txt in leg.get_texts():
             txt.set_color(text_color)
+
+        # reveal-wipe intro, same clip-rectangle technique as plot_data
+        if reveal:
+            from matplotlib.patches import Rectangle
+            import matplotlib.animation as animation
+            ylo, yhi = float(paths.min()), float(paths.max())
+            pad = (yhi - ylo) * 0.06 + 1e-6
+            clip = Rectangle((0 - 1, ylo - pad), 0, (yhi - ylo) + 2 * pad,
+                             transform=ax.transData)
+            clip.set_visible(False)
+            ax.add_patch(clip)
+            for artist in ax.lines:
+                artist.set_clip_path(clip)
+            def _reveal(_frame):
+                clip.set_width(max(_frame, 0.0))
+                return tuple(ax.lines)
+            anim = animation.FuncAnimation(
+                fig, _reveal, frames=self.num_of_steps, interval=14,
+                blit=False, repeat=False)
+            fig._reveal_anim = anim
+
         fig.tight_layout()
         return fig

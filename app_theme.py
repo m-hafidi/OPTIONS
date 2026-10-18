@@ -54,6 +54,10 @@ def _root(theme: str) -> str:
         f"--accent:{p['accent']};--accentHover:{p['accentHover']};"
         f"--onAccent:{p['onAccent']};--cardShadow:{card_shadow};"
         "--font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;"
+        # Motion tokens, mirroring the reference tabs' motion-tokens values.
+        "--ease-spring:cubic-bezier(.34,1.4,.5,1);"
+        "--ease-standard:cubic-bezier(.22,1,.36,1);"
+        "--motion-fast:160ms;--motion-spring:560ms;"
         "}"
     )
 
@@ -101,52 +105,97 @@ small, .stCaption, div[data-testid="stCaptionContainer"] {
 .topbar { display: flex; align-items: center; justify-content: space-between; }
 .topbar h1 { padding: 0; }
 
-/* ---- segmented pill group (model switcher + theme) ---- */
-div[data-testid="stRadio"] > label[data-testid="stWidgetLabel"],
-div[data-testid="stRadio"] p {
-  color: var(--text2) !important;
-  font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em;
-  text-transform: uppercase; margin-bottom: 0.4rem;
+/* ---- segmented pill group (model switcher + theme) ----
+   Streamlit 1.29 radios are Base Web circle-and-dot widgets
+   (label[data-baseweb="radio"] > visualCircle + input + textDiv).
+   Hide the circle, promote the real text into a pill, and drive the
+   selected state off the checked input. The widget caption is hidden so
+   each group reads as one clean control.
+
+   Motion: the accent highlight is a single pill painted on ::before and
+   slid into place with transform, so switching segments glides the accent
+   between pills instead of fading — the same "layout morph" the reference
+   motion/react tabs perform. */
+div[data-testid="stRadio"] > label[data-testid="stWidgetLabel"] {
+  display: none;
 }
 div[data-testid="stRadio"] div[role="radiogroup"] {
-  gap: 0; background: var(--raised); border: 1px solid var(--border);
-  border-radius: 999px; padding: 4px;
+  display: flex; gap: 4px; background: var(--raised);
+  border: 1px solid var(--border); border-radius: 999px; padding: 4px;
 }
-div[data-testid="stRadio"] div[role="radiogroup"] label {
-  flex: 1 1 0; justify-content: center; cursor: pointer;
+/* the Base Web visual circle (first child of the label) */
+div[data-testid="stRadio"] label[data-baseweb="radio"] > div:first-child {
+  display: none !important;
 }
-div[data-testid="stRadio"] div[role="radiogroup"] label > div {
+div[data-testid="stRadio"] label[data-baseweb="radio"] {
+  flex: 1 1 0; justify-content: center; align-items: center;
+  cursor: pointer; padding: 0; background: transparent !important;
+}
+/* the real text node becomes the pill */
+div[data-testid="stRadio"] label[data-baseweb="radio"] > div:last-child {
   width: 100%; text-align: center; padding: 9px 14px; border-radius: 999px;
   color: var(--text2); font-weight: 600; font-size: 0.9rem;
-  transition: color .16s ease, background .16s ease; white-space: nowrap;
+  background: transparent; transition: color var(--motion-fast, 160ms) ease;
+  white-space: nowrap;
 }
-div[data-testid="stRadio"] div[role="radiogroup"] label:hover > div {
-  color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent);
+div[data-testid="stRadio"] label[data-baseweb="radio"] > div:last-child p {
+  color: inherit; font-size: inherit; font-weight: inherit; margin: 0;
 }
-div[data-testid="stRadio"] div[role="radiogroup"]
-  label > div[data-checked="true"] {
-  background: var(--accent); color: var(--onAccent);
+/* each segment is a positioning context for the sliding accent pill */
+div[data-testid="stRadio"] label[data-baseweb="radio"] {
+  position: relative; isolation: isolate;
 }
-/* the real input is invisible; keep it focusable + show a ring on its label */
-div[data-testid="stRadio"] input { position: absolute; opacity: 0; pointer-events: none; }
-div[data-testid="stRadio"] input:focus-visible + div,
-div[data-testid="stRadio"] label:focus-within > div {
+/* the sliding accent highlight, painted once per segment but only shown on
+   the checked one; the transform makes it glide between pills */
+div[data-testid="stRadio"] label[data-baseweb="radio"]::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  border-radius: 999px; background: var(--accent);
+  opacity: 0; transform: translateX(0) scale(.94);
+  transition:
+    transform var(--motion-spring, 560ms) var(--ease-spring, cubic-bezier(.34,1.4,.5,1)),
+    opacity var(--motion-fast, 160ms) var(--ease-standard, cubic-bezier(.22,1,.36,1));
+}
+div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked)::before {
+  opacity: 1; transform: translateX(0) scale(1);
+}
+/* the label text follows the pill in and out, so nothing sits on bare canvas
+   while the accent is mid-flight */
+div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked)
+  > div:last-child {
+  color: var(--onAccent);
+}
+/* hover only lifts unselected segments; the checked one keeps its accent fill */
+div[data-testid="stRadio"] label[data-baseweb="radio"]:not(:has(input:checked)):hover > div:last-child {
+  color: var(--text);
+}
+/* keep the real input in the a11y tree, focusable, but visually hidden */
+div[data-testid="stRadio"] input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:focus-visible)
+  > div:last-child {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
 
 /* compact theme toggle in the top bar */
-.theme-switch div[role="radiogroup"] label > div { padding: 7px 14px; font-size: 0.8125rem; }
-.theme-switch p { display: none; }
-
-/* ---- cards: the one container for a group of inputs ---- */
-.card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 28px 28px 24px; box-shadow: var(--cardShadow);
+.theme-switch label[data-baseweb="radio"] > div:last-child {
+  padding: 7px 15px; font-size: 0.8125rem;
 }
-.card + .card { margin-top: 20px; }
-.card-title {
-  color: var(--text); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em;
-  margin: 0 0 18px;
+
+/* the theme radio lives in the header's right column; keep it a tight pill */
+section:first-of-type div[role="radiogroup"] label[data-baseweb="radio"] > div:last-child {
+  padding: 6px 13px; font-size: 0.8125rem;
+}
+
+/* ---- cards: native bordered container, dressed to the world ---- */
+div[data-testid="stBorderContainer"] {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px 28px 26px; box-shadow: var(--cardShadow);
+}
+div[data-testid="stBorderContainer"] h3,
+div[data-testid="stBorderContainer"] h4 {
+  color: var(--text); font-weight: 700; letter-spacing: -0.01em;
+  margin: 0 0 18px; padding-top: 0;
 }
 
 /* ---- inputs ---- */
