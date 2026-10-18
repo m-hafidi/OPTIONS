@@ -12,19 +12,14 @@ from pathlib import Path
 from time import monotonic
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
 
 sys.path.append(str(Path(__file__).resolve().parent.parent / "legacy"))
 from option_pricing import BlackScholesModel, BinomialTreeModel, MonteCarloPricing  # noqa: E402
 
+# No CORS middleware: the browser only ever reaches this service through the Vite
+# proxy at /api, which is same-origin by construction.
 app = FastAPI(title="Option pricing API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Quotes are cached briefly so typing a symbol or re-pricing doesn't hammer Yahoo.
 _QUOTE_TTL_SECONDS = 60.0
@@ -169,3 +164,11 @@ def price(
         result["pathsTotal"] = column_count
 
     return result
+
+
+# Serve the built React app for any request that matches no API route — the same
+# bundle the Vite dev server serves at :5173. FastAPI checks path operations first,
+# so /api/* always wins; on Vercel these files are promoted to the CDN at build time
+# and only the API requests reach this function. check_dir=False because locally
+# `npm run api` can run before (or without) `npm run build`.
+app.frontend("/", directory="dist", check_dir=False)

@@ -1,0 +1,11 @@
+# Runtime dependencies for the Vercel deploy (see README → "Deploy to Vercel").
+#
+# Keep in sync with server/requirements.txt + legacy/Requirements.txt, minus the
+# web/plotting layer the API never touches: no streamlit, no uvicorn (Vercel runs
+# the ASGI app itself), and no matplotlib (the legacy chart helpers import it
+# lazily, and the API never calls them).
+fastapi>=0.143
+yfinance==1.7.0
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "fastapi",
+  "buildCommand": "npm install && npm run build",
+  "functions": {
+    "server/main.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{.venv/**,node_modules/**,src/**,docs/**,scripts/**,legacy/media/**,**/__pycache__/**}"
+    }
+  }
+}

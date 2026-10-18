@@ -1,0 +1,8 @@
+# Vercel reads the Python entrypoint from here; dependencies come from
+# requirements.txt at the project root (which is also what triggers the
+# FastAPI framework preset).
+#
+# Local development doesn't use this file: `npm run api` still runs uvicorn
+# against server/main.py with server/requirements.txt + legacy/Requirements.txt.
+[tool.vercel]
+entrypoint = "server.main:app"

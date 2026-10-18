@@ -36,6 +36,30 @@ npm run dev        # Vite on http://localhost:5173
 
 Open **http://localhost:5173** — the dev server proxies `/api` to the pricing API.
 
+## Deploy to Vercel
+
+Both halves deploy together: the Vite build is served as static files, and `server/main.py` becomes a single Python function that answers `/api/*` — the same paths, so the client needs no configuration.
+
+| File | Role |
+| --- | --- |
+| `requirements.txt` | The API's deploy dependencies (no streamlit, no uvicorn, no matplotlib) |
+| `pyproject.toml` | Points Vercel at the ASGI entrypoint `server.main:app` |
+| `vercel.json` | Pins the FastAPI preset, sets the build command (`npm install && npm run build`), and excludes `.venv`/`node_modules`/front-end sources from the function bundle |
+| `server/main.py` | `app.frontend("/", directory="dist")` serves the built app for any request that matches no API route; Vercel promotes those files to the CDN at build time |
+
+```bash
+npm i -g vercel
+vercel            # first run links the project
+vercel --prod     # production
+```
+
+Or import the repository in the Vercel dashboard — `vercel.json` already pins the framework and build settings.
+
+Notes:
+
+- The first request after a cold start pays ~2–4 s to import pandas/scipy/yfinance. The quote (60 s) and history (300 s) caches live per warm instance, so Yahoo gets hit a bit more often than locally.
+- Keep `requirements.txt` in sync with `server/requirements.txt` + `legacy/Requirements.txt`, minus the web layer the API never touches.
+
 ## API
 
 | Endpoint | Returns |

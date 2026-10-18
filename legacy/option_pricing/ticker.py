@@ -1,6 +1,5 @@
 import datetime
 import yfinance as yf
-import matplotlib.pyplot as plt
 import pandas as pd
 
 class Ticker:
@@ -52,6 +51,10 @@ class Ticker:
             raise ValueError("Input must be a pandas DataFrame")
         if column_name not in data.columns:
             raise ValueError(f"Column '{column_name}' not found in the DataFrame")
+
+        # Imported here, not at module scope: the pricing API never draws charts,
+        # so its serverless bundle doesn't need to carry matplotlib.
+        import matplotlib.pyplot as plt
 
         x = list(range(len(data)))
         y = data[column_name].to_numpy()
