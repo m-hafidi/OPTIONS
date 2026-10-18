@@ -42,8 +42,9 @@ Both halves deploy together: the Vite build is served as static files, and `serv
 
 | File | Role |
 | --- | --- |
-| `requirements.txt` | The API's deploy dependencies (no streamlit, no uvicorn, no matplotlib) |
-| `pyproject.toml` | Points Vercel at the ASGI entrypoint `server.main:app` |
+| `pyproject.toml` | `[project]` pins Python 3.12 and the dependency set for `uv lock`/`uv sync`; `[tool.vercel]` points Vercel at the ASGI entrypoint `server.main:app` |
+| `requirements.txt` | The same dependency set mirrored for pip-based installs (no streamlit, no uvicorn, no matplotlib) |
+| `uv.lock` | The resolved lockfile, committed so the build's `uv lock` is a no-op and transitive versions are pinned |
 | `vercel.json` | Pins the FastAPI preset, sets the build command (`npm install && npm run build`), and excludes `.venv`/`node_modules`/front-end sources from the function bundle |
 | `server/main.py` | `app.frontend("/", directory="dist")` serves the built app for any request that matches no API route; Vercel promotes those files to the CDN at build time |
 
@@ -57,8 +58,9 @@ Or import the repository in the Vercel dashboard — `vercel.json` already pins 
 
 Notes:
 
+- `pyproject.toml` and `requirements.txt` carry the same pinned dependency set — keep them in sync; `uv` reads the former, pip the latter.
+- Don't run `uv sync` in the local `.venv`: it installs exactly the API's set and would strip streamlit/matplotlib that the legacy Streamlit app needs. Vercel syncs its own fresh environment.
 - The first request after a cold start pays ~2–4 s to import pandas/scipy/yfinance. The quote (60 s) and history (300 s) caches live per warm instance, so Yahoo gets hit a bit more often than locally.
-- Keep `requirements.txt` in sync with `server/requirements.txt` + `legacy/Requirements.txt`, minus the web layer the API never touches.
 
 ## API
 

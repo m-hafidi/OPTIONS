@@ -1,8 +1,21 @@
-# Vercel reads the Python entrypoint from here; dependencies come from
-# requirements.txt at the project root (which is also what triggers the
-# FastAPI framework preset).
-#
-# Local development doesn't use this file: `npm run api` still runs uvicorn
-# against server/main.py with server/requirements.txt + legacy/Requirements.txt.
+[project]
+name = "option-pricing-api"
+version = "0.1.0"
+# 3.12 only: the pinned numpy/scipy wheels stop at 3.12, and 3.12 is Vercel's
+# default — a looser range would let the resolver pick 3.13 and find no wheels.
+requires-python = ">=3.12,<3.13"
+# Pinned to the versions the API runs on locally. Mirrored in requirements.txt;
+# keep the two in sync (whichever file the build reads, the same set installs).
+dependencies = [
+    "fastapi==0.143.3",
+    "yfinance==1.7.0",
+    "numpy==1.26.2",
+    "pandas==2.1.4",
+    "scipy==1.11.4",
+]
+
+# Vercel reads the Python entrypoint from here. Local development doesn't use
+# this file: `npm run api` still runs uvicorn against server/main.py with
+# server/requirements.txt + legacy/Requirements.txt.
 [tool.vercel]
 entrypoint = "server.main:app"

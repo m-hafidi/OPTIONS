@@ -1,10 +1,10 @@
 # Runtime dependencies for the Vercel deploy (see README → "Deploy to Vercel").
 #
-# Pinned to the versions the API runs on locally, so the function imports exactly
-# what was tested. Keep in sync with server/requirements.txt +
-# legacy/Requirements.txt, minus the web/plotting layer the API never touches:
-# no streamlit, no uvicorn (Vercel runs the ASGI app itself), and no matplotlib
-# (the legacy chart helpers import it lazily, and the API never calls them).
+# Mirrors [project].dependencies in pyproject.toml — keep the two in sync
+# (uv reads pyproject.toml, pip reads this file; both must resolve the same set).
+# Pinned to the versions the API runs on locally. No streamlit, no uvicorn (Vercel
+# runs the ASGI app itself), no matplotlib (the legacy chart helpers import it
+# lazily, and the API never calls them).
 fastapi==0.143.3
 yfinance==1.7.0
 numpy==1.26.2
