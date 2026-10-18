@@ -5,6 +5,7 @@
   "functions": {
     "server/main.py": {
       "maxDuration": 60,
+      "includeFiles": "{legacy/__init__.py,legacy/option_pricing/*.py,legacy/option_pricing/**/*.py,dist/**}",
       "excludeFiles": "{.venv/**,node_modules/**,src/**,docs/**,scripts/**,legacy/media/**,**/__pycache__/**}"
     }
   }

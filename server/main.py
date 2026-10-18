@@ -14,8 +14,17 @@ from time import monotonic
 from fastapi import FastAPI, HTTPException, Query
 import yfinance as yf
 
-sys.path.append(str(Path(__file__).resolve().parent.parent / "legacy"))
-from option_pricing import BlackScholesModel, BinomialTreeModel, MonteCarloPricing  # noqa: E402
+# The engines live in legacy/option_pricing. Import them through `legacy.` so the
+# path is statically visible: the Vercel bundler walks imports to assemble the
+# function, and a bare `import option_pricing` after sys.path juggling leaves the
+# package out of the bundle — the function then dies with ModuleNotFoundError on
+# every request (FUNCTION_INVOCATION_FAILED). The repo root on sys.path makes the
+# same line work locally, whatever directory the server is started from.
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from legacy.option_pricing import BlackScholesModel, BinomialTreeModel, MonteCarloPricing  # noqa: E402
 
 # No CORS middleware: the browser only ever reaches this service through the Vite
 # proxy at /api, which is same-origin by construction.
@@ -169,6 +178,8 @@ def price(
 # Serve the built React app for any request that matches no API route — the same
 # bundle the Vite dev server serves at :5173. FastAPI checks path operations first,
 # so /api/* always wins; on Vercel these files are promoted to the CDN at build time
-# and only the API requests reach this function. check_dir=False because locally
-# `npm run api` can run before (or without) `npm run build`.
-app.frontend("/", directory="dist", check_dir=False)
+# and only the API requests reach this function. Registered only when the build
+# output is there: without it, the request-time lookup would raise and turn every
+# page hit into a 500 instead of a 404.
+if (Path.cwd() / "dist").is_dir():
+    app.frontend("/", directory="dist", check_dir=False)
