@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 
 export default defineConfig({
+  // Relative asset paths so the static build also works from GitHub Pages under /OPTIONS/.
+  base: "./",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

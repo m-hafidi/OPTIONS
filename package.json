@@ -5,6 +5,7 @@
   "description": "European option pricing (Black-Scholes, Monte Carlo, binomial tree) with live Yahoo Finance data.",
   "scripts": {
     "dev": "vite",
+    "build": "vite build",
     "api": ".venv/Scripts/python -m uvicorn main:app --port 8000 --app-dir server",
     "typecheck": "tsc --noEmit"
   },
