@@ -1,0 +1,5 @@
+# The pricing engines and their scientific stack come from legacy/Requirements.txt
+# (numpy, scipy, pandas, matplotlib, yfinance 1.7.0 — the pin that still works
+# against Yahoo's API). This file only adds the web layer:
+fastapi
+uvicorn

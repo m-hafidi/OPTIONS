@@ -4,7 +4,14 @@ __pycache__
 virtualenv
 venv
 .venv
+node_modules/
+
+# Build output
+dist/
+.next/
+*.tsbuildinfo
 
 # Files to ignore
 *.pyc
 *.sqlite
+.DS_Store

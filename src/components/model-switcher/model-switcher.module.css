@@ -1,0 +1,57 @@
+/* Two columns once there's room: controls left, everything the price click produces right.
+   Below that, a single centered column — the old stacked flow. */
+.columns {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 45rem;
+  margin-inline: auto;
+}
+@media (min-width: 64rem) {
+  .columns {
+    max-width: none;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: start;
+  }
+}
+.controls {
+  min-width: 0;
+}
+.results {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+}
+.placeholder {
+  margin: var(--space-6) 0 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-panel);
+  padding: var(--space-10) var(--space-8);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  text-align: center;
+}
+/* The method tabs with the theme switch beside them, centered as one row. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+/* The model description sits above both columns, centered like a subtitle. */
+.blurb {
+  margin: 0 auto var(--space-6);
+  max-width: 34rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  text-align: center;
+}
+.priceError {
+  margin: var(--space-4) 0 0;
+  color: var(--danger);
+  font-size: var(--text-xs);
+  line-height: var(--leading-body);
+}
