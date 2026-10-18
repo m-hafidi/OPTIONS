@@ -1,7 +1,5 @@
 # Third party imports
 import numpy as np
-from scipy.stats import norm 
-import matplotlib.pyplot as plt
 
 # Local package imports
 from .base import OptionPricingModel
@@ -38,13 +36,20 @@ class MonteCarloPricing(OptionPricingModel):
         self.num_of_steps = days_to_maturity
         self.dt = self.T / self.num_of_steps
 
+        # Filled by simulate_prices(); stays None until a run happens, which is what
+        # the payoffs below check for.
+        self.simulation_results_S = None
+
     def simulate_prices(self):
         """
         Simulating price movement of underlying prices using Brownian random process.
         Saving random results.
+
+        Each run draws from a fresh generator instead of a fixed seed: re-pricing the
+        same contract then differs by simulation error, which is the point of
+        comparing this model against the closed form.
         """
-        np.random.seed(20)
-        self.simulation_results = None
+        rng = np.random.default_rng()
 
         # Initializing price movements for simulation: rows as time index and columns as different random price movements.
         S = np.zeros((self.num_of_steps, self.N))        
@@ -53,7 +58,7 @@ class MonteCarloPricing(OptionPricingModel):
 
         for t in range(1, self.num_of_steps):
             # Random values to simulate Brownian motion (Gaussian distibution)
-            Z = np.random.standard_normal(self.N)
+            Z = rng.standard_normal(self.N)
             # Updating prices for next point in time 
             S[t] = S[t - 1] * np.exp((self.r - 0.5 * self.sigma ** 2) * self.dt + (self.sigma * np.sqrt(self.dt) * Z))
 
@@ -90,6 +95,10 @@ class MonteCarloPricing(OptionPricingModel):
         Theme colors are passed in so the chart sits on the app's surface;
         defaults match the dark theme.
         """
+        # Imported here, not at module scope: the pricing API never draws charts,
+        # so its serverless bundle doesn't need to carry matplotlib.
+        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(figsize=(9, 4.2), dpi=150)
         fig.patch.set_alpha(0.0)
         ax.set_facecolor("none")

@@ -1,6 +1,5 @@
 # Third party imports
 import numpy as np
-from scipy.stats import norm 
 
 # Local package imports
 from .base import OptionPricingModel
@@ -34,12 +33,26 @@ class BinomialTreeModel(OptionPricingModel):
         self.sigma = sigma
         self.number_of_time_steps = number_of_time_steps
 
+    def _tree_parameters(self):
+        """Step size, up/down factors and the risk-neutral up probability.
+
+        The raw (a - d)/(u - d) drifts outside [0, 1] when volatility is small
+        relative to the rate over few steps, which would price with a negative
+        "probability"; it is clipped so the tree stays an honest average of its
+        two branches. With zero volatility u == d and any p reproduces the same
+        value, so 0.5 just keeps the division finite.
+        """
+        dT = self.T / self.number_of_time_steps
+        u = np.exp(self.sigma * np.sqrt(dT))
+        d = 1.0 / u
+        a = np.exp(self.r * dT)      # risk free compounded return
+        p = 0.5 if u == d else (a - d) / (u - d)
+        return dT, u, d, float(np.clip(p, 0.0, 1.0))
+
     def _calculate_call_option_price(self): 
         """Calculates price for call option according to the Binomial formula."""
-        # Delta t, up and down factors
-        dT = self.T / self.number_of_time_steps                             
-        u = np.exp(self.sigma * np.sqrt(dT))                 
-        d = 1.0 / u                                    
+        dT, u, d, p = self._tree_parameters()
+        q = 1.0 - p                  # risk neutral down probability   
 
         # Price vector initialization
         V = np.zeros(self.number_of_time_steps + 1)                       
@@ -47,24 +60,18 @@ class BinomialTreeModel(OptionPricingModel):
         # Underlying asset prices at different time points
         S_T = np.array( [(self.S * u**j * d**(self.number_of_time_steps - j)) for j in range(self.number_of_time_steps + 1)])
 
-        a = np.exp(self.r * dT)      # risk free compounded return
-        p = (a - d) / (u - d)        # risk neutral up probability
-        q = 1.0 - p                  # risk neutral down probability   
-
         V[:] = np.maximum(S_T - self.K, 0.0)
     
         # Overriding option price 
-        for i in range(self.number_of_time_steps - 1, -1, -1):
+        for _ in range(self.number_of_time_steps - 1, -1, -1):
             V[:-1] = np.exp(-self.r * dT) * (p * V[1:] + q * V[:-1]) 
 
         return V[0]
 
     def _calculate_put_option_price(self): 
         """Calculates price for put option according to the Binomial formula."""  
-        # Delta t, up and down factors
-        dT = self.T / self.number_of_time_steps                             
-        u = np.exp(self.sigma * np.sqrt(dT))                 
-        d = 1.0 / u                                    
+        dT, u, d, p = self._tree_parameters()
+        q = 1.0 - p                  # risk neutral down probability   
 
         # Price vector initialization
         V = np.zeros(self.number_of_time_steps + 1)                       
@@ -72,14 +79,10 @@ class BinomialTreeModel(OptionPricingModel):
         # Underlying asset prices at different time points
         S_T = np.array( [(self.S * u**j * d**(self.number_of_time_steps - j)) for j in range(self.number_of_time_steps + 1)])
 
-        a = np.exp(self.r * dT)      # risk free compounded return
-        p = (a - d) / (u - d)        # risk neutral up probability
-        q = 1.0 - p                  # risk neutral down probability   
-
         V[:] = np.maximum(self.K - S_T, 0.0)
     
         # Overriding option price 
-        for i in range(self.number_of_time_steps - 1, -1, -1):
+        for _ in range(self.number_of_time_steps - 1, -1, -1):
             V[:-1] = np.exp(-self.r * dT) * (p * V[1:] + q * V[:-1]) 
 
         return V[0]

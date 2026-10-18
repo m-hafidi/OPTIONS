@@ -93,12 +93,35 @@ export default function ModelSwitcher() {
     else start.call(document, update);
   };
 
-  const patch = (next: Partial<OptionParams>) => {
-    setParams((current) => ({ ...current, ...next }));
-    // A displayed price belongs to the parameters that produced it; changing anything retires it.
+  // Every retire bumps this: a response only lands if it belongs to the request the
+  // user is still looking at, so a slow price or history can't repaint retired figures.
+  const generation = useRef(0);
+  const inFlight = useRef<AbortController | null>(null);
+
+  /** Retires the displayed figures and cancels whatever is still in flight. */
+  const retire = () => {
+    generation.current += 1;
+    inFlight.current?.abort();
+    inFlight.current = null;
+    setPricing(false);
     setResult(null);
     setPriceError(null);
     setHistory(null);
+  };
+
+  // Unmount: invalidate and cancel, without touching state the component no longer owns.
+  useEffect(
+    () => () => {
+      generation.current += 1;
+      inFlight.current?.abort();
+    },
+    [],
+  );
+
+  const patch = (next: Partial<OptionParams>) => {
+    setParams((current) => ({ ...current, ...next }));
+    // A displayed price belongs to the parameters that produced it; changing anything retires it.
+    retire();
   };
 
   // Live last close for the typed symbol, debounced like the old app's cached fetch.
@@ -151,40 +174,57 @@ export default function ModelSwitcher() {
       setPriceError("Enter a strike price to price the option.");
       return;
     }
+    retire(); // clear yesterday's figures and cancel anything still out there
+    const gen = generation.current;
+    const controller = new AbortController();
+    inFlight.current = controller;
     setPricing(true);
-    setResult(null);
-    setPriceError(null);
-    setHistory(null);
     try {
-      const priced = await fetchPrice({
-        model,
-        ticker: params.ticker,
-        strike,
-        rate: params.rate / 100,
-        sigma: params.sigma / 100,
-        expiry: params.expiry,
-        sims: params.sims,
-        steps: params.steps,
-        paths: params.paths,
-      });
+      const priced = await fetchPrice(
+        {
+          model,
+          ticker: params.ticker,
+          strike,
+          rate: params.rate / 100,
+          sigma: params.sigma / 100,
+          expiry: params.expiry,
+          sims: params.sims,
+          steps: params.steps,
+          paths: params.paths,
+        },
+        controller.signal,
+      );
+      if (gen !== generation.current) return;
       setResult(priced);
       // The old app drew the year-of-closes chart after pricing; a history hiccup shouldn't hide the prices.
-      fetchHistory(params.ticker)
-        .then(setHistory)
-        .catch(() => setHistory(null));
+      fetchHistory(params.ticker, controller.signal)
+        .then((year) => {
+          if (gen === generation.current) setHistory(year);
+        })
+        .catch(() => {
+          if (gen === generation.current) setHistory(null);
+        });
     } catch (error) {
+      if (gen !== generation.current) return;
       setPriceError(
         error instanceof Error ? error.message : "Pricing failed unexpectedly.",
       );
     } finally {
-      setPricing(false);
+      if (gen === generation.current) {
+        inFlight.current = null;
+        setPricing(false);
+      }
     }
   }
 
   return (
     <Tabs
       value={model}
-      onValueChange={(next) => setModel(next as ModelId)}
+      // A figure priced by another model isn't this model's answer; switching retires it.
+      onValueChange={(next) => {
+        setModel(next as ModelId);
+        retire();
+      }}
       className="w-full max-w-[68rem]"
     >
       <div className={styles.toolbar}>

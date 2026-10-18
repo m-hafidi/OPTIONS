@@ -65,7 +65,7 @@ export function fetchHistory(ticker: string, signal?: AbortSignal): Promise<Hist
   return get<History>(`/api/history?ticker=${encodeURIComponent(ticker)}`, signal);
 }
 
-export function fetchPrice(request: PriceRequest): Promise<PriceResult> {
+export function fetchPrice(request: PriceRequest, signal?: AbortSignal): Promise<PriceResult> {
   const query = new URLSearchParams({
     model: request.model,
     ticker: request.ticker,
@@ -77,5 +77,5 @@ export function fetchPrice(request: PriceRequest): Promise<PriceResult> {
     steps: String(request.steps),
     paths: String(request.paths),
   });
-  return get<PriceResult>(`/api/price?${query.toString()}`);
+  return get<PriceResult>(`/api/price?${query.toString()}`, signal);
 }
