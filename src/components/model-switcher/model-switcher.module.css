@@ -22,6 +22,20 @@
   align-content: start;
   min-width: 0;
 }
+/* The band keeps the full results width on every method; below it, the charts row —
+   on Monte Carlo the paths sit beside the year chart instead of under it. */
+.chartsRow {
+  display: grid;
+  align-content: start;
+  gap: 0 var(--space-6);
+  min-width: 0;
+}
+@media (min-width: 64rem) {
+  .chartsRow.split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
 .placeholder {
   margin: var(--space-6) 0 0;
   border: 1px dashed var(--border);

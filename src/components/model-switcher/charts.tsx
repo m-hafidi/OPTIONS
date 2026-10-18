@@ -43,8 +43,8 @@ export function SimulatedPaths({ result }: { result: PriceResult }) {
       <p className={styles.note}>
         {paths.length.toLocaleString("en-US")} of{" "}
         {(result.pathsTotal ?? 0).toLocaleString("en-US")} simulations, sampled
-        evenly. Each line ends at its expiry price — green finishes above the{" "}
-        {money(result.strike)} strike (in the money for a call), red below.
+        evenly — green finishes above the {money(result.strike)} strike, red
+        below.
       </p>
       <div className={styles.grid}>
         {paths.map((path, index) => {
@@ -55,13 +55,13 @@ export function SimulatedPaths({ result }: { result: PriceResult }) {
               key={index}
               data={path}
               labels={labels}
-              label={`Path ${index + 1}`}
+              label={`#${index + 1}`}
               value={money(end)}
               change={signedPct((end / start - 1) * 100)}
               tone={end > result.strike ? "success" : "danger"}
               formatValue={money}
-              width={150}
-              height={44}
+              width={140}
+              height={36}
               interactive={false}
             />
           );

@@ -222,10 +222,18 @@ export default function ModelSwitcher() {
               {result ? (
                 <>
                   <ResultBand result={result} />
-                  {history && <HistoryChart history={history} />}
-                  {model === "monte-carlo" && result.paths && (
-                    <SimulatedPaths result={result} />
-                  )}
+                  <div
+                    className={
+                      model === "monte-carlo" && result.paths
+                        ? `${styles.chartsRow} ${styles.split}`
+                        : styles.chartsRow
+                    }
+                  >
+                    {history && <HistoryChart history={history} />}
+                    {model === "monte-carlo" && result.paths && (
+                      <SimulatedPaths result={result} />
+                    )}
+                  </div>
                 </>
               ) : (
                 <p className={styles.placeholder} role="status">
